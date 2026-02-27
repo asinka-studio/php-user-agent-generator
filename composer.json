@@ -4,7 +4,7 @@
 	"license":     "MIT",
 	"description": "PHP User-agent generator",
 	"homepage":    "https://github.com/asinka-studio/php-user-agent-generator",
-	"version":     "0.1.1",
+	"version":     "0.1.2",
 	"authors":     [
 		{
 			"name":  "Alexey S. Mikhaltsov",
