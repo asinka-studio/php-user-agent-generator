@@ -2,8 +2,8 @@
 
 namespace Asinka;
 
-use Exception;
-use RuntimeException;
+use Asinka\Exceptions\UAGeneratorException;
+use Random\RandomException;
 
 /**
  * Class UAGenerator
@@ -20,6 +20,8 @@ class UAGenerator
 	/** @var string */
 	public const string BROWSER_CHROME = 'chrome';
 	/** @var string */
+	public const string BROWSER_EDGE = 'edge';
+	/** @var string */
 	public const string BROWSER_IEXPLORER = 'iexplorer';
 	/** @var string */
 	public const string BROWSER_FIREFOX = 'firefox';
@@ -30,41 +32,40 @@ class UAGenerator
 
 	/**
 	 * @return string[]
-	 * @throws Exception
+	 * @throws UAGeneratorException
 	 */
-	private function chooseRandomBrowserAndOS(): array
+	private static function chooseRandomBrowserAndOS(): array
 	{
 		$frequencies = [
-			34 => [
-				89 => [self::BROWSER_CHROME, self::OS_WINDOWS],
-				9  => [self::BROWSER_CHROME, self::OS_MAC],
-				2  => [self::BROWSER_CHROME, self::OS_LINUX],
+			58 => [
+				70 => [self::BROWSER_CHROME, self::OS_WINDOWS],
+				20 => [self::BROWSER_CHROME, self::OS_MAC],
+				10 => [self::BROWSER_CHROME, self::OS_LINUX],
 			],
-			32 => [
-				100 => [self::BROWSER_IEXPLORER, self::OS_WINDOWS],
+			20 => [
+				95 => [self::BROWSER_EDGE, self::OS_WINDOWS],
+				5  => [self::BROWSER_EDGE, self::OS_MAC],
 			],
-			25 => [
-				83 => [self::BROWSER_FIREFOX, self::OS_WINDOWS],
-				16 => [self::BROWSER_FIREFOX, self::OS_MAC],
-				1  => [self::BROWSER_FIREFOX, self::OS_LINUX],
+			10 => [
+				100 => [self::BROWSER_SAFARI, self::OS_MAC],
 			],
-			7  => [
-				95 => [self::BROWSER_SAFARI, self::OS_MAC],
-				4  => [self::BROWSER_SAFARI, self::OS_WINDOWS],
-				1  => [self::BROWSER_SAFARI, self::OS_LINUX],
+			9  => [
+				60 => [self::BROWSER_FIREFOX, self::OS_WINDOWS],
+				25 => [self::BROWSER_FIREFOX, self::OS_MAC],
+				15 => [self::BROWSER_FIREFOX, self::OS_LINUX],
 			],
-			2  => [
-				91 => [self::BROWSER_OPERA, self::OS_WINDOWS],
-				6  => [self::BROWSER_OPERA, self::OS_LINUX],
-				3  => [self::BROWSER_OPERA, self::OS_MAC],
+			3  => [
+				70 => [self::BROWSER_OPERA, self::OS_WINDOWS],
+				20 => [self::BROWSER_OPERA, self::OS_MAC],
+				10 => [self::BROWSER_OPERA, self::OS_LINUX],
 			],
 		];
-		$rand        = rand(1, 100);
+		$rand        = self::randomInt(1, 100);
 		$sum         = 0;
 		foreach ($frequencies as $freq => $osFreqs) {
 			$sum += $freq;
 			if ($rand <= $sum) {
-				$rand = rand(1, 100);
+				$rand = self::randomInt(1, 100);
 				$sum  = 0;
 				foreach ($osFreqs as $freq2 => $choice) {
 					$sum += $freq2;
@@ -74,130 +75,131 @@ class UAGenerator
 				}
 			}
 		}
-		throw new Exception("Frequencies don't sum to 100.");
+		throw new UAGeneratorException("Frequencies don't sum to 100.");
+	}
+
+	/**
+	 * @param int $min
+	 * @param int $max
+	 * @return int
+	 */
+	private static function randomInt(int $min, int $max): int
+	{
+		try {
+			return random_int($min, $max);
+		} catch (RandomException) {
+			return $min;
+		}
 	}
 
 	/**
 	 * @param array $array
 	 * @return mixed
 	 */
-	private function array_random(array $array): mixed
+	private static function arrayRandom(array $array): mixed
 	{
 		return $array[array_rand($array, 1)];
 	}
 
 	/*** @return string */
-	private function nt_version(): string
+	private static function windowsPlatform(): string
 	{
-		return rand(5, 6) . '.' . rand(0, 1);
-	}
-
-	/*** @return string */
-	private function ie_version(): string
-	{
-		return rand(7, 9) . '.0';
-	}
-
-	/*** @return string */
-	private function trident_version(): string
-	{
-		return rand(3, 5) . '.' . rand(0, 1);
-	}
-
-	/*** @return string */
-	private function osx_version(): string
-	{
-		return "10_" . rand(5, 7) . '_' . rand(0, 9);
-	}
-
-	/*** @return string */
-	private function chrome_version(): string
-	{
-		return rand(100, 140) . '.0.' . rand(800, 899) . '.0';
-	}
-
-	/*** @return string */
-	private function presto_version(): string
-	{
-		return '2.9.' . rand(160, 190);
-	}
-
-	/*** @return string */
-	private function presto_version2(): string
-	{
-		return rand(10, 12) . '.00';
-	}
-
-	/**
-	 * @param string $arch
-	 * @return string
-	 */
-	private function firefox(string $arch = self::OS_WINDOWS): string
-	{
-		$ver = $this->array_random([
-			'Gecko/' . date('Ymd', rand(strtotime('2010-1-1'), time())) . ' Firefox/' . rand(120, 131) . '.0',
-			'Gecko/' . date('Ymd', rand(strtotime('2010-1-1'), time())) . ' Firefox/' . rand(120, 131) . '.0.1',
+		return self::arrayRandom([
+			'Windows NT 10.0; Win64; x64',
+			'Windows NT 10.0; WOW64',
 		]);
-		switch ($arch) {
-			case self::OS_LINUX:
-				return "(X11; Linux {proc}; rv:" . rand(5, 7) . ".0) $ver";
-			case self::OS_MAC:
-				$osx = $this->osx_version();
-				return "(Macintosh; {proc} Mac OS X $osx rv:" . rand(2, 6) . ".0) $ver";
-			case self::OS_WINDOWS:
-			default:
-				$nt = $this->nt_version();
-				return "(Windows NT $nt; {lang}; rv:1.9." . rand(0, 2) . ".20) $ver";
-		}
-	}
-
-	/**
-	 * @param string $arch
-	 * @return string
-	 */
-	private function safari(string $arch = self::OS_WINDOWS): string
-	{
-		$saf = rand(600, 605) . '.' . rand(1, 50) . '.' . rand(1, 7);
-		if (rand(0, 1) == 0) {
-			$ver = rand(15, 18) . '.' . rand(0, 1);
-		} else {
-			$ver = rand(15, 18) . '.0.' . rand(1, 5);
-		}
-		switch ($arch) {
-			case self::OS_MAC:
-				$osx = $this->osx_version();
-				return "(Macintosh; U; {proc} Mac OS X $osx rv:" . rand(2, 6) . ".0; {lang}) AppleWebKit/$saf (KHTML, like Gecko) Version/$ver Safari/$saf";
-			case self::OS_WINDOWS:
-			default:
-				$nt = $this->nt_version();
-				return "(Windows; U; Windows NT $nt) AppleWebKit/$saf (KHTML, like Gecko) Version/$ver Safari/$saf";
-		}
 	}
 
 	/*** @return string */
-	private function iexplorer(): string
+	private static function osxVersion(): string
 	{
-		$nt      = $this->nt_version();
-		$ie      = $this->ie_version();
-		$trident = $this->trident_version();
-		return "(compatible; MSIE $ie; Windows NT $nt; Trident/$trident)";
+		$major = self::arrayRandom([13, 14, 15]);
+		$minor = self::randomInt(0, 6);
+		return $major . '_' . $minor;
+	}
+
+	/*** @return string */
+	private static function chromeVersion(): string
+	{
+		return self::randomInt(132, 147) . '.0.' . self::randomInt(6700, 7099) . '.' . self::randomInt(0, 199);
+	}
+
+	/*** @return string */
+	private static function edgeVersion(): string
+	{
+		return self::randomInt(132, 136) . '.0.' . self::randomInt(3000, 3499) . '.' . self::randomInt(0, 99);
+	}
+
+	/*** @return string */
+	private static function firefoxVersion(): string
+	{
+		return self::randomInt(133, 136) . '.0';
+	}
+
+	/*** @return string */
+	private static function safariVersion(): string
+	{
+		return self::arrayRandom([
+			'17.' . self::randomInt(0, 6),
+			'18.' . self::randomInt(0, 2),
+		]);
+	}
+
+	/*** @return string */
+	private static function operaVersion(): string
+	{
+		return self::randomInt(112, 118) . '.0.' . self::randomInt(0, 99) . '.' . self::randomInt(0, 99);
 	}
 
 	/**
 	 * @param string $arch
 	 * @return string
 	 */
-	private function opera(string $arch = self::OS_WINDOWS): string
+	private static function firefox(string $arch = self::OS_WINDOWS): string
 	{
-		$presto  = $this->presto_version();
-		$version = $this->presto_version2();
+		$version = self::firefoxVersion();
 		switch ($arch) {
 			case self::OS_LINUX:
-				return "(X11; Linux {proc}; U; {lang}) Presto/$presto Version/$version";
+				return "(X11; Linux x86_64; rv:$version) Gecko/20100101 Firefox/$version";
+			case self::OS_MAC:
+				$osx = self::osxVersion();
+				return "(Macintosh; Intel Mac OS X $osx; rv:$version) Gecko/20100101 Firefox/$version";
 			case self::OS_WINDOWS:
 			default:
-				$nt = $this->nt_version();
-				return "(Windows NT $nt; U; {lang}) Presto/$presto Version/$version";
+				$platform = self::windowsPlatform();
+				return "($platform; rv:$version) Gecko/20100101 Firefox/$version";
+		}
+	}
+
+	/**
+	 * @return string
+	 */
+	private static function safari(): string
+	{
+		$webkit  = '605.1.15';
+		$version = self::safariVersion();
+		$osx     = self::osxVersion();
+		return "(Macintosh; Intel Mac OS X $osx) AppleWebKit/$webkit (KHTML, like Gecko) Version/$version Safari/$webkit";
+	}
+
+	/**
+	 * @param string $arch
+	 * @return string
+	 */
+	private static function edge(string $arch = self::OS_WINDOWS): string
+	{
+		$chrome = self::chromeVersion();
+		$edge   = self::edgeVersion();
+		switch ($arch) {
+			case self::OS_LINUX:
+				return "(X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chrome Safari/537.36 Edg/$edge";
+			case self::OS_MAC:
+				$osx = self::osxVersion();
+				return "(Macintosh; Intel Mac OS X $osx) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chrome Safari/537.36 Edg/$edge";
+			case self::OS_WINDOWS:
+			default:
+				$platform = self::windowsPlatform();
+				return "($platform) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chrome Safari/537.36 Edg/$edge";
 		}
 	}
 
@@ -205,20 +207,41 @@ class UAGenerator
 	 * @param string $arch
 	 * @return string
 	 */
-	private function chrome(string $arch = self::OS_WINDOWS): string
+	private static function opera(string $arch = self::OS_WINDOWS): string
 	{
-		$saf    = rand(531, 536) . rand(0, 2);
-		$chrome = $this->chrome_version();
+		$chrome  = self::chromeVersion();
+		$version = self::operaVersion();
 		switch ($arch) {
 			case self::OS_LINUX:
-				return "(X11; Linux {proc}) AppleWebKit/$saf (KHTML, like Gecko) Chrome/$chrome Safari/$saf";
+				return "(X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chrome Safari/537.36 OPR/$version";
 			case self::OS_MAC:
-				$osx = $this->osx_version();
-				return "(Macintosh; U; {proc} Mac OS X $osx) AppleWebKit/$saf (KHTML, like Gecko) Chrome/$chrome Safari/$saf";
+				$osx = self::osxVersion();
+				return "(Macintosh; Intel Mac OS X $osx) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chrome Safari/537.36 OPR/$version";
 			case self::OS_WINDOWS:
 			default:
-				$nt = $this->nt_version();
-				return "(Windows NT $nt) AppleWebKit/$saf (KHTML, like Gecko) Chrome/$chrome Safari/$saf";
+				$platform = self::windowsPlatform();
+				return "($platform) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chrome Safari/537.36 OPR/$version";
+		}
+	}
+
+	/**
+	 * @param string $arch
+	 * @return string
+	 */
+	private static function chrome(string $arch = self::OS_WINDOWS): string
+	{
+		$webkit = '537.36';
+		$chrome = self::chromeVersion();
+		switch ($arch) {
+			case self::OS_LINUX:
+				return "(X11; Linux x86_64) AppleWebKit/$webkit (KHTML, like Gecko) Chrome/$chrome Safari/$webkit";
+			case self::OS_MAC:
+				$osx = self::osxVersion();
+				return "(Macintosh; Intel Mac OS X $osx) AppleWebKit/$webkit (KHTML, like Gecko) Chrome/$chrome Safari/$webkit";
+			case self::OS_WINDOWS:
+			default:
+				$platform = self::windowsPlatform();
+				return "($platform) AppleWebKit/$webkit (KHTML, like Gecko) Chrome/$chrome Safari/$webkit";
 		}
 	}
 
@@ -226,28 +249,30 @@ class UAGenerator
 	 * Main function which will choose random browser
 	 * @param string|NULL $browser
 	 * @param string|NULL $os
-	 * @param array       $lang languages to choose from
 	 * @return string       user agent
-	 * @throws Exception
+	 * @throws UAGeneratorException
 	 */
-	public function random_agent(?string $browser = NULL, ?string $os = NULL, array $lang = ['en-US']): string
+	public static function randomAgent(?string $browser = NULL, ?string $os = NULL): string
 	{
-		[$genBrowser, $genOs] = $this->chooseRandomBrowserAndOs();
+		[$genBrowser, $genOs] = self::chooseRandomBrowserAndOs();
 		$browser = $browser ?? $genBrowser;
 		$os      = $os ?? $genOs;
-		$proc    = [
-			self::OS_LINUX   => ['i686', 'x86_64'],
-			self::OS_MAC     => ['Intel', 'PPC', 'U; Intel', 'U; PPC'],
-			self::OS_WINDOWS => ['foo'],
-		];
-		$ua      = match ($browser) {
-			self::BROWSER_FIREFOX => "Mozilla/5.0 " . $this->firefox($os),
-			self::BROWSER_SAFARI => "Mozilla/5.0 " . $this->safari($os),
-			self::BROWSER_IEXPLORER => "Mozilla/5.0 " . $this->iexplorer($os),
-			self::BROWSER_OPERA => "Opera/" . rand(8, 9) . '.' . rand(10, 99) . ' ' . $this->opera($os),
-			self::BROWSER_CHROME => 'Mozilla/5.0 ' . $this->chrome($os),
-			default => throw new RuntimeException('Unknown browser: ' . $browser),
+		// Keep backward compatibility for explicit IE requests.
+		if ($browser === self::BROWSER_IEXPLORER) {
+			$browser = self::BROWSER_EDGE;
+			$os      = self::OS_WINDOWS;
+		}
+		if ($browser === self::BROWSER_SAFARI) {
+			$os = self::OS_MAC;
+		}
+		return match ($browser) {
+			self::BROWSER_FIREFOX => "Mozilla/5.0 " . self::firefox($os),
+			self::BROWSER_SAFARI => "Mozilla/5.0 " . self::safari(),
+			self::BROWSER_EDGE => "Mozilla/5.0 " . self::edge($os),
+			self::BROWSER_IEXPLORER => "Mozilla/5.0 " . self::edge(self::OS_WINDOWS),
+			self::BROWSER_OPERA => "Mozilla/5.0 " . self::opera($os),
+			self::BROWSER_CHROME => 'Mozilla/5.0 ' . self::chrome($os),
+			default => throw new UAGeneratorException('Unknown browser: ' . $browser),
 		};
-		return str_replace(['{proc}', '{lang}'], [$this->array_random($proc[$os]), $this->array_random($lang)], $ua);
 	}
 }
