@@ -4,11 +4,36 @@ Generate realistic desktop `User-Agent` strings for modern browsers.
 
 ## Current Version
 
-- Package version: `0.1.0`
+- Package version: `0.1.1`
 - Namespace: `Asinka`
 - Main API: `Asinka\UAGenerator::randomAgent()`
 
-## What's New in This Version
+## Update in `0.1.1`
+
+This release adds new functionality on top of previous versions.
+
+- User-Agent generator now supports mobile platforms (`Android` and `iOS`).
+- Added full HTTP headers generator for top-level HTML document navigation.
+
+### New headers API (`0.1.1`)
+
+```php
+<?php
+
+use Asinka\Headers\DocumentHeadersGenerator;
+
+require __DIR__ . '/vendor/autoload.php';
+
+$generator = new DocumentHeadersGenerator();
+
+// Random browser/platform profile
+$headers = $generator->generateHeaders();
+
+// Explicit profile
+$headersChromiumWindows = $generator->generateHeaders('chromium', 'Windows');
+```
+
+## Update in `0.1.0`
 
 ### 1) Updated User-Agent versions and formats
 
